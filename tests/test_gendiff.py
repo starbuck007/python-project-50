@@ -1,4 +1,5 @@
 import pytest
+import subprocess
 from gendiff.modules.gendiff import generate_diff
 from gendiff.modules.parser_args import parse_args
 
@@ -31,3 +32,13 @@ def test_generate_diff():
 def test_file_not_found():
     with pytest.raises(FileNotFoundError):
         generate_diff('non_existent_file1.json', 'non_existent_file2.json')
+
+
+def test_cli_two_files():
+    result = subprocess.run(
+        ['python', '-m', 'gendiff.scripts.gendiff', 'tests/fixtures/file1.json', 'tests/fixtures/file2.json'],
+        capture_output=True, text=True
+    )
+    assert result.returncode == 0
+    expected_output = generate_diff('tests/fixtures/file1.json', 'tests/fixtures/file2.json')
+    assert result.stdout.strip().splitlines() == expected_output.strip().splitlines()
