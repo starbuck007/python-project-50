@@ -1,7 +1,7 @@
 import argparse
 
 
-def parser_args():
+def parse_args(args=None):
     parser = argparse.ArgumentParser(
         description='Compares two configuration files and shows a difference.'
     )
@@ -10,5 +10,4 @@ def parser_args():
     parser.add_argument('-f', '--format',
                         choices=['FORMAT'],
                         help='set format of output')
-    args = parser.parse_args()
-    return args
+    return parser.parse_args(args)
