@@ -1,9 +1,4 @@
-import json
-
-
-def load_json(file_path):
-    with open(file_path, 'r') as file:
-        return json.load(file)
+from gendiff.modules.parser import load_data
 
 
 def format_value(value):
@@ -13,8 +8,8 @@ def format_value(value):
 
 
 def generate_diff(file1, file2):
-    file1_data = load_json(file1)
-    file2_data = load_json(file2)
+    file1_data = load_data(file1)
+    file2_data = load_data(file2)
 
     all_keys = sorted(set(file1_data.keys()).union(set(file2_data.keys())))
     diff = []

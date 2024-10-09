@@ -16,7 +16,7 @@ def test_single_file_argument():
         parse_args(['file1.json'])
 
 
-def test_generate_diff():
+def test_generate_diff_json():
     expected_output = """{
   - follow: false
     host: hexlet.io
@@ -42,3 +42,16 @@ def test_cli_two_files():
     assert result.returncode == 0
     expected_output = generate_diff('tests/fixtures/file1.json', 'tests/fixtures/file2.json')
     assert result.stdout.strip().splitlines() == expected_output.strip().splitlines()
+
+
+def test_generate_diff_yaml():
+    expected_output = """{
+  - follow: false
+    host: hexlet.io
+  - proxy: 123.234.53.22
+  - timeout: 50
+  + timeout: 20
+  + verbose: true
+}"""
+    result = generate_diff('tests/fixtures/file1.yaml', 'tests/fixtures/file2.yaml')
+    assert result.strip() == expected_output.strip()
