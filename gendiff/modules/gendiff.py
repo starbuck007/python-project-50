@@ -74,41 +74,121 @@ def build_diff(data1, data2):
     return diff
 
 
+# def stylish(diff, depth=0):
+#     indent = "    " * depth
+#     result = []
+#
+#     for node in diff:
+#         key = node['key']
+#         node_type = node['type']
+#
+#         if node_type == 'added':
+#             result.append(
+#                 f"{indent}  + {key}: {format_value(node['value'], depth + 1)}"
+#             )
+#         elif node_type == 'removed':
+#             result.append(
+#                 f"{indent}  - {key}: {format_value(node['value'], depth + 1)}"
+#             )
+#         elif node_type == 'unchanged':
+#             result.append(
+#                 f"{indent}    {key}: {format_value(node['value'], depth + 1)}"
+#             )
+#         elif node_type == 'updated':
+#             result.append(
+#                 f"{indent}  - {key}: "
+#                 f"{format_value(node['old_value'], depth + 1)}"
+#             )
+#             result.append(
+#                 f"{indent}  + {key}: "
+#                 f"{format_value(node['new_value'], depth + 1)}"
+#             )
+#         elif node_type == 'nested':
+#             result.append(f"{indent}    {key}: {{")
+#             result.append(stylish(node['children'], depth + 1))
+#             result.append(f"{indent}    }}")
+#
+#     if depth == 0:
+#         return "{\n" + "\n".join(result) + "\n}"
+#     else:
+#         return "\n".join(result)
+
+
+def format_added(indent, key, value, depth):
+    return f"{indent}  + {key}: {format_value(value, depth + 1)}"
+
+
+def format_removed(indent, key, value, depth):
+    return f"{indent}  - {key}: {format_value(value, depth + 1)}"
+
+
+def format_unchanged(indent, key, value, depth):
+    return f"{indent}    {key}: {format_value(value, depth + 1)}"
+
+
+def format_updated(indent, key, old_value, new_value, depth):
+    return [
+        f"{indent}  - {key}: {format_value(old_value, depth + 1)}",
+        f"{indent}  + {key}: {format_value(new_value, depth + 1)}"
+    ]
+
+
+def format_nested(indent, key, children, depth):
+    result = [f"{indent}    {key}: {{"]
+    result.append(stylish(children, depth + 1))
+    result.append(f"{indent}    }}")
+    return result
+
+
 def stylish(diff, depth=0):
     indent = "    " * depth
     result = []
 
-    for node in diff:
-        key = node['key']
-        node_type = node['type']
+    node_handlers = {
+        'added': lambda node: [
+            format_added(
+                indent,
+                node['key'],
+                node['value'],
+                depth
+            )
+        ],
+        'removed': lambda node: [
+            format_removed(
+                indent,
+                node['key'],
+                node['value'],
+                depth
+            )
+        ],
+        'unchanged': lambda node: [
+            format_unchanged(
+                indent,
+                node['key'],
+                node['value'],
+                depth
+            )
+        ],
+        'updated': lambda node: format_updated(
+            indent,
+            node['key'],
+            node['old_value'],
+            node['new_value'],
+            depth
+        ),
+        'nested': lambda node: format_nested(
+            indent,
+            node['key'],
+            node['children'],
+            depth
+        ),
+    }
 
-        if node_type == 'added':
-            result.append(
-                f"{indent}  + {key}: {format_value(node['value'], depth + 1)}"
-            )
-        elif node_type == 'removed':
-            result.append(
-                f"{indent}  - {key}: {format_value(node['value'], depth + 1)}"
-            )
-        elif node_type == 'unchanged':
-            result.append(
-                f"{indent}    {key}: {format_value(node['value'], depth + 1)}"
-            )
-        elif node_type == 'updated':
-            result.append(
-                f"{indent}  - {key}: "
-                f"{format_value(node['old_value'], depth + 1)}"
-            )
-            result.append(
-                f"{indent}  + {key}: "
-                f"{format_value(node['new_value'], depth + 1)}"
-            )
-        elif node_type == 'nested':
-            result.append(f"{indent}    {key}: {{")
-            result.append(stylish(node['children'], depth + 1))
-            result.append(f"{indent}    }}")
+    for node in diff:
+        handler = node_handlers.get(node['type'])
+        if handler:
+            result.extend(handler(node))
 
     if depth == 0:
         return "{\n" + "\n".join(result) + "\n}"
-    else:
-        return "\n".join(result)
+    return "\n".join(result)
