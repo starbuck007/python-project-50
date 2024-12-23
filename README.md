@@ -23,6 +23,8 @@ Example usage for JSON:
 
 [![asciicast](https://asciinema.org/a/Fi5hg69spbEdWIMZOHdwYJWFy.svg)](https://asciinema.org/a/Fi5hg69spbEdWIMZOHdwYJWFy)
 
+[![asciicast](https://asciinema.org/a/dZ3W1W0u80hGz3mDzjHKPw4Oz.svg)](https://asciinema.org/a/dZ3W1W0u80hGz3mDzjHKPw4Oz)
+
 Example usage for YAML:
 ```gendiff file1.yaml file2.yaml```
 
