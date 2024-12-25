@@ -3,6 +3,7 @@ import yaml
 import pytest
 import subprocess
 from gendiff.modules.gendiff import generate_diff, build_diff, stylish
+from gendiff.modules.formatters.plain import stringify, format_plain
 from gendiff.modules.parser_args import parse_args
 from gendiff.modules.parser import load_data
 
@@ -53,7 +54,7 @@ def expected_diff():
     ]
 
 
-# Общий ожидаемый результат для stylish
+# Ожидаемый результат для stylish
 @pytest.fixture
 def expected_stylish_output():
     return """{
@@ -100,6 +101,24 @@ def expected_stylish_output():
         fee: 100500
     }
 }"""
+
+
+# Ожидаемый результат для plain
+@pytest.fixture
+def expected_plain_output():
+    return (
+        "Property 'common.follow' was added with value: false\n"
+        "Property 'common.setting2' was removed\n"
+        "Property 'common.setting3' was updated. From true to null\n"
+        "Property 'common.setting4' was added with value: 'blah blah'\n"
+        "Property 'common.setting5' was added with value: [complex value]\n"
+        "Property 'common.setting6.doge.wow' was updated. From '' to 'so much'\n"
+        "Property 'common.setting6.ops' was added with value: 'vops'\n"
+        "Property 'group1.baz' was updated. From 'bas' to 'bars'\n"
+        "Property 'group1.nest' was updated. From [complex value] to 'str'\n"
+        "Property 'group2' was removed\n"
+        "Property 'group3' was added with value: [complex value]"
+    )
 
 
 # Тесты для load_data
@@ -173,19 +192,15 @@ def test_build_diff_empty_dicts():
 @pytest.mark.parametrize("file1, file2, format_type, expected_output", [
     ("tests/fixtures/file1.json", "tests/fixtures/file2.json", "stylish", "stylish"),
     ("tests/fixtures/file1.yaml", "tests/fixtures/file2.yaml", "stylish", "stylish"),
-    ("tests/fixtures/file1.json", "tests/fixtures/file2.json", "json", "json"),
-    ("tests/fixtures/file1.yaml", "tests/fixtures/file2.yaml", "json", "json"),
-    ("tests/fixtures/file1.json", "tests/fixtures/file2.json", "yaml", "yaml"),
-    ("tests/fixtures/file1.yaml", "tests/fixtures/file2.yaml", "yaml", "yaml"),
+    ("tests/fixtures/file1.json", "tests/fixtures/file2.json", "plain", "plain"),
+    ("tests/fixtures/file1.yaml", "tests/fixtures/file2.yaml", "plain", "plain"),
 ])
-def test_generate_diff(file1, file2, format_type, expected_output, load_data_fixture, expected_stylish_output, expected_diff):
+def test_generate_diff(file1, file2, format_type, expected_output, load_data_fixture, expected_stylish_output, expected_plain_output, expected_diff):
     result = generate_diff(file1, file2, format_type)
     if format_type == "stylish":
         expected = expected_stylish_output
-    elif format_type == "json":
-        expected = json.dumps(expected_diff, indent=4)
-    elif format_type == "yaml":
-        expected = yaml.dump(expected_diff, sort_keys=False)
+    elif format_type == "plain":
+        expected = expected_plain_output
     else:
         raise ValueError(f"Unknown format type: {format_type}")
     assert result.strip() == expected.strip()
@@ -193,8 +208,6 @@ def test_generate_diff(file1, file2, format_type, expected_output, load_data_fix
 
 @pytest.mark.parametrize("format_type, expected_type", [
     ("stylish", str),
-    ("yaml", str),
-    ("json", list)
 ])
 def test_generate_diff_formats(format_type, expected_type):
     result = generate_diff("tests/fixtures/file1.json", "tests/fixtures/file2.json", format_type)
@@ -223,9 +236,32 @@ def test_stylish(file1, file2, load_data_fixture, expected_stylish_output):
     assert result.strip() == expected_stylish_output.strip()
 
 
+# Тесты для plain
+def test_stringify():
+    assert stringify(True) == 'true'
+    assert stringify(False) == 'false'
+    assert stringify(None) == 'null'
+    assert stringify("string") == "'string'"
+    assert stringify(123) == 123
+    assert stringify({"key": "value"}) == "[complex value]"
+
+
+@pytest.mark.parametrize("file1, file2", [
+    ("tests/fixtures/file1.json", "tests/fixtures/file2.json"),
+    ("tests/fixtures/file1.yaml", "tests/fixtures/file2.yaml"),
+])
+def test_format_plain(file1, file2, load_data_fixture, expected_plain_output):
+    data1 = load_data_fixture(file1)
+    data2 = load_data_fixture(file2)
+    diff = build_diff(data1, data2)
+    result = format_plain(diff)
+    assert result == expected_plain_output
+
+
 # Тесты CLI
 @pytest.mark.parametrize("file1, file2, format_type", [
     ("tests/fixtures/file1.json", "tests/fixtures/file2.json", "stylish"),
+    ("tests/fixtures/file1.yaml", "tests/fixtures/file2.yaml", "plain"),
 ])
 def test_cli(file1, file2, format_type):
     result = subprocess.run(
