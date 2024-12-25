@@ -1,56 +1,177 @@
+"""
+This module contains tests for the 'gendiff' application, which generates
+a difference between two configuration files in various formats.
+"""
+import subprocess
 import json
 import yaml
 import pytest
-import subprocess
 from gendiff.modules.gendiff import generate_diff, build_diff, stylish
 from gendiff.modules.formatters.plain import stringify, format_plain
 from gendiff.modules.parser_args import parse_args
-from gendiff.modules.parser import load_data
 
 
-# Загрузка тестовых данных
 @pytest.fixture
 def load_data_fixture():
+    """
+    Fixture for loading test data from JSON or YAML files.
+
+    Returns:
+        function: A function that takes a file path and returns its parsed content.
+    """
     def _load(file_path):
+        """
+        Loads data from the given file path.
+
+        Args:
+            file_path (str): Path to the file to load.
+
+        Returns:
+            dict: Parsed content of the file.
+
+        Raises:
+            ValueError: If the file format is unsupported.
+        """
         if file_path.endswith('.json'):
-            with open(file_path) as f:
+            with open(file_path, encoding='utf-8') as f:
                 return json.load(f)
-        elif file_path.endswith('.yaml'):
-            with open(file_path) as f:
+        elif file_path.endswith('.yaml') or file_path.endswith('.yml'):
+            with open(file_path, encoding='utf-8') as f:
                 return yaml.safe_load(f)
+        raise ValueError(f"Unsupported file format: {file_path}")
     return _load
 
 
-# Общий ожидаемый diff для всех форматов
 @pytest.fixture
 def expected_diff():
+    """
+    Fixture providing a pre-defined difference tree (diff) for testing.
+
+    Returns:
+        list: A diff tree with the differences between two files.
+    """
     return [
         {
-            'key': 'common', 'type': 'nested', 'children': [
-                {'key': 'follow', 'type': 'added', 'value': False},
-                {'key': 'setting1', 'type': 'unchanged', 'value': 'Value 1'},
-                {'key': 'setting2', 'type': 'removed', 'value': 200},
-                {'key': 'setting3', 'type': 'updated', 'old_value': True, 'new_value': None},
-                {'key': 'setting4', 'type': 'added', 'value': 'blah blah'},
-                {'key': 'setting5', 'type': 'added', 'value': {'key5': 'value5'}},
-                {'key': 'setting6', 'type': 'nested', 'children': [
-                    {'key': 'doge', 'type': 'nested', 'children': [
-                        {'key': 'wow', 'type': 'updated', 'old_value': '', 'new_value': 'so much'},
-                    ]},
-                    {'key': 'key', 'type': 'unchanged', 'value': 'value'},
-                    {'key': 'ops', 'type': 'added', 'value': 'vops'},
-                ]},
+            'key': 'common',
+            'type': 'nested',
+            'children': [
+                {
+                    'key': 'follow',
+                    'type': 'added',
+                    'value': False
+                },
+                {
+                    'key': 'setting1',
+                    'type': 'unchanged',
+                    'value': 'Value 1'
+                },
+                {
+                    'key': 'setting2',
+                    'type': 'removed',
+                    'value': 200
+                },
+                {
+                    'key': 'setting3',
+                    'type': 'updated',
+                    'old_value': True,
+                    'new_value': None
+                },
+                {
+                    'key': 'setting4',
+                    'type': 'added',
+                    'value': 'blah blah'
+                },
+                {
+                    'key': 'setting5',
+                    'type': 'added',
+                    'value':
+                        {
+                            'key5': 'value5'
+                        }
+                },
+                {
+                    'key': 'setting6',
+                    'type': 'nested',
+                    'children': [
+                    {
+                        'key': 'doge',
+                        'type': 'nested',
+                        'children': [
+                        {
+                            'key': 'wow',
+                            'type': 'updated',
+                            'old_value': '',
+                            'new_value': 'so much'
+                        },
+                    ]
+                    },
+                    {
+                        'key': 'key',
+                        'type': 'unchanged',
+                        'value': 'value'
+                    },
+                    {
+                        'key': 'ops',
+                        'type': 'added',
+                        'value': 'vops'
+                    },
+                ]
+                },
             ],
         },
         {
-            'key': 'group1', 'type': 'nested', 'children': [
-                {'key': 'baz', 'type': 'updated', 'old_value': 'bas', 'new_value': 'bars'},
-                {'key': 'foo', 'type': 'unchanged', 'value': 'bar'},
-                {'key': 'nest', 'type': 'updated', 'old_value': {'key': 'value'}, 'new_value': 'str'},
+            'key': 'group1',
+            'type': 'nested',
+            'children': [
+                {
+                    'key': 'baz',
+                    'type': 'updated',
+                    'old_value': 'bas',
+                    'new_value': 'bars'
+                },
+                {
+                    'key': 'foo',
+                    'type': 'unchanged',
+                    'value': 'bar'
+                },
+                {
+                    'key': 'nest',
+                    'type': 'updated',
+                    'old_value':
+                        {
+                            'key': 'value'
+                        },
+                    'new_value': 'str'
+                },
             ],
         },
-        {'key': 'group2', 'type': 'removed', 'value': {'abc': 12345, 'deep': {'id': 45}}},
-        {'key': 'group3', 'type': 'added', 'value': {'deep': {'id': {'number': 45}}, 'fee': 100500}},
+        {
+            'key': 'group2',
+            'type': 'removed',
+            'value':
+                {
+                    'abc': 12345,
+                    'deep':
+                        {
+                            'id': 45
+                        }
+                }
+        },
+        {
+            'key': 'group3',
+            'type': 'added',
+            'value':
+                {
+                    'deep':
+                        {
+                            'id':
+                                {
+                                    'number': 45
+                                }
+                        },
+                    'fee': 100500
+                }
+        },
     ]
 
 
@@ -195,7 +316,7 @@ def test_build_diff_empty_dicts():
     ("tests/fixtures/file1.json", "tests/fixtures/file2.json", "plain", "plain"),
     ("tests/fixtures/file1.yaml", "tests/fixtures/file2.yaml", "plain", "plain"),
 ])
-def test_generate_diff(file1, file2, format_type, expected_output, load_data_fixture, expected_stylish_output, expected_plain_output, expected_diff):
+def test_generate_diff(file1, file2, format_type, expected_output, expected_stylish_output, expected_plain_output):
     result = generate_diff(file1, file2, format_type)
     if format_type == "stylish":
         expected = expected_stylish_output
