@@ -1,5 +1,7 @@
+# pylint: disable=redefined-outer-name
+
 """
-This module contains tests for the 'gendiff' application, which generates
+This module contains tests for the app, which generates
 a difference between two configuration files in various formats.
 """
 import subprocess
@@ -175,9 +177,14 @@ def expected_diff():
     ]
 
 
-# Ожидаемый результат для stylish
 @pytest.fixture
 def expected_stylish_output():
+    """
+    Fixture providing the expected output of the 'stylish' formatter.
+
+    Returns:
+        str: The expected stylish format output as a string.
+    """
     return """{
     common: {
       + follow: false
@@ -224,9 +231,14 @@ def expected_stylish_output():
 }"""
 
 
-# Ожидаемый результат для plain
 @pytest.fixture
 def expected_plain_output():
+    """
+    Fixture providing the expected output of the 'plain' formatter.
+
+    Returns:
+        str: The expected plain format output as a string.
+    """
     return (
         "Property 'common.follow' was added with value: false\n"
         "Property 'common.setting2' was removed\n"
@@ -242,7 +254,6 @@ def expected_plain_output():
     )
 
 
-# Тесты для load_data
 @pytest.mark.parametrize("file_path, expected_data", [
     ("tests/fixtures/file1.json", {
         "common": {
@@ -268,15 +279,55 @@ def expected_plain_output():
     })
 ])
 def test_load_data(file_path, expected_data, load_data_fixture):
+    """
+    Tests the data loading function with various file formats.
+
+    Args:
+        file_path (str): Path to the test file to load.
+        expected_data (dict): Expected parsed data from the file.
+        load_data_fixture (function): Fixture for loading the file content.
+
+    Asserts:
+        The loaded data matches the expected parsed data.
+    """
     assert load_data_fixture(file_path) == expected_data
 
 
-# Тесты для parse_args
-@pytest.mark.parametrize("args, expected", [
-    (["file1.json", "file2.json", "--format", "stylish"], {"first_file": "file1.json", "second_file": "file2.json", "format": "stylish"}),
-    (["file1.json", "file2.json"], {"first_file": "file1.json", "second_file": "file2.json", "format": "stylish"})
-])
+@pytest.mark.parametrize(
+    "args, expected",
+    [
+        (
+                ["file1.json", "file2.json", "--format", "stylish"],
+                {
+                    "first_file": "file1.json",
+                    "second_file": "file2.json",
+                    "format": "stylish"
+                }
+        ),
+        (
+                ["file1.json", "file2.json"],
+                {
+                    "first_file": "file1.json",
+                    "second_file": "file2.json",
+                    "format": "stylish"
+                }
+        )
+    ]
+)
 def test_parse_args_valid(args, expected):
+    """
+    Tests the parse_args function with valid arguments.
+
+    Args:
+        args (list): Command-line arguments to parse.
+        expected (dict): Expected parsed arguments with keys:
+            - 'first_file': The first file path.
+            - 'second_file': The second file path.
+            - 'format': The output format (default is 'stylish').
+
+    Asserts:
+        The parsed arguments match the expected dictionary values.
+    """
     parsed_args = parse_args(args)
     assert parsed_args.first_file == expected["first_file"]
     assert parsed_args.second_file == expected["second_file"]
@@ -288,16 +339,38 @@ def test_parse_args_valid(args, expected):
     (["file1.json", "file2.json", "--format", "invalid_format"])
 ])
 def test_parse_args_invalid(args):
+    """
+    Tests the parse_args function with invalid arguments:
+    - Required arguments are missing.
+    - An invalid format is provided.
+
+    Args:
+        args (list): Command-line arguments to parse.
+
+    Asserts:
+        The function raises a `SystemExit` exception for invalid input.
+    """
     with pytest.raises(SystemExit):
         parse_args(args)
 
 
-# Тесты для build_diff
 @pytest.mark.parametrize("file1, file2", [
     ("tests/fixtures/file1.json", "tests/fixtures/file2.json"),
     ("tests/fixtures/file1.yaml", "tests/fixtures/file2.yaml")
 ])
 def test_build_diff(file1, file2, load_data_fixture, expected_diff):
+    """
+    Tests the build_diff function to ensure it generates the correct diff tree.
+
+    Args:
+        file1 (str): Path to the first test file.
+        file2 (str): Path to the second test file.
+        load_data_fixture (function): Fixture for loading file content.
+        expected_diff (list): The expected diff tree describing the differences.
+
+    Asserts:
+        The generated diff tree matches the expected diff tree.
+    """
     data1 = load_data_fixture(file1)
     data2 = load_data_fixture(file2)
     actual_diff = build_diff(data1, data2)
@@ -305,32 +378,65 @@ def test_build_diff(file1, file2, load_data_fixture, expected_diff):
 
 
 def test_build_diff_empty_dicts():
+    """
+    Tests the build_diff function with two empty dictionaries.
+
+    Asserts:
+        The generated diff tree is an empty list.
+    """
     result = build_diff({}, {})
-    assert result == []
+    assert not result
 
 
-# Тесты для generate_diff
-@pytest.mark.parametrize("file1, file2, format_type, expected_output", [
-    ("tests/fixtures/file1.json", "tests/fixtures/file2.json", "stylish", "stylish"),
-    ("tests/fixtures/file1.yaml", "tests/fixtures/file2.yaml", "stylish", "stylish"),
-    ("tests/fixtures/file1.json", "tests/fixtures/file2.json", "plain", "plain"),
-    ("tests/fixtures/file1.yaml", "tests/fixtures/file2.yaml", "plain", "plain"),
-])
-def test_generate_diff(file1, file2, format_type, expected_output, expected_stylish_output, expected_plain_output):
+@pytest.mark.parametrize(
+    "file1, file2, format_type, expected_fixture",
+    [
+        (
+                "tests/fixtures/file1.json",
+                "tests/fixtures/file2.json",
+                "stylish",
+                "expected_stylish_output"
+        ),
+        (
+                "tests/fixtures/file1.yaml",
+                "tests/fixtures/file2.yaml",
+                "plain",
+                "expected_plain_output"
+        ),
+    ]
+)
+def test_generate_diff(file1, file2, format_type, expected_fixture, request):
+    """
+    Tests the generate_diff function for different formats.
+
+    Args:
+        file1 (str): Path to the first file.
+        file2 (str): Path to the second file.
+        format_type (str): Format type ("stylish", "plain").
+        expected_fixture (str): Name of the fixture holding the expected output.
+
+    Asserts:
+        The generated output matches the expected output for the given format.
+    """
+    expected_output = request.getfixturevalue(expected_fixture)
     result = generate_diff(file1, file2, format_type)
-    if format_type == "stylish":
-        expected = expected_stylish_output
-    elif format_type == "plain":
-        expected = expected_plain_output
-    else:
-        raise ValueError(f"Unknown format type: {format_type}")
-    assert result.strip() == expected.strip()
+    assert result.strip() == expected_output.strip()
 
 
 @pytest.mark.parametrize("format_type, expected_type", [
     ("stylish", str),
 ])
 def test_generate_diff_formats(format_type, expected_type):
+    """
+    Tests the generate_diff function for supported formats.
+
+    Args:
+        format_type (str): The format type to test ("stylish", "json", etc.).
+        expected_type (type): The expected data type of the generated output.
+
+    Asserts:
+        The output of the `generate_diff` function matches the expected type.
+    """
     result = generate_diff("tests/fixtures/file1.json", "tests/fixtures/file2.json", format_type)
     if format_type == "json":
         parsed = json.loads(result)
@@ -340,16 +446,34 @@ def test_generate_diff_formats(format_type, expected_type):
 
 
 def test_generate_diff_invalid_format():
+    """
+    Tests the generate_diff function with an unsupported format.
+
+    Asserts:
+        A `ValueError` is raised with the message "Unsupported format" when
+        an invalid format type is used.
+    """
     with pytest.raises(ValueError, match="Unsupported format"):
         generate_diff("tests/fixtures/file1.json", "tests/fixtures/file2.json", "xml")
 
 
-# Тесты для stylish
 @pytest.mark.parametrize("file1, file2", [
     ("tests/fixtures/file1.json", "tests/fixtures/file2.json"),
     ("tests/fixtures/file1.yaml", "tests/fixtures/file2.yaml"),
 ])
 def test_stylish(file1, file2, load_data_fixture, expected_stylish_output):
+    """
+    Tests the stylish formatter with JSON and YAML input files.
+
+    Args:
+        file1 (str): Path to the first test file (JSON or YAML).
+        file2 (str): Path to the second test file (JSON or YAML).
+        load_data_fixture (function): Fixture for loading file content.
+        expected_stylish_output (str): The expected output in stylish format.
+
+    Asserts:
+        The output of the `stylish` function matches the expected output.
+    """
     data1 = load_data_fixture(file1)
     data2 = load_data_fixture(file2)
     diff = build_diff(data1, data2)
@@ -357,8 +481,13 @@ def test_stylish(file1, file2, load_data_fixture, expected_stylish_output):
     assert result.strip() == expected_stylish_output.strip()
 
 
-# Тесты для plain
 def test_stringify():
+    """
+    Tests the stringify function for various input types.
+
+    Asserts:
+        Output matches the expected format for each input type.
+    """
     assert stringify(True) == 'true'
     assert stringify(False) == 'false'
     assert stringify(None) == 'null'
@@ -372,6 +501,18 @@ def test_stringify():
     ("tests/fixtures/file1.yaml", "tests/fixtures/file2.yaml"),
 ])
 def test_format_plain(file1, file2, load_data_fixture, expected_plain_output):
+    """
+    Tests the plain formatter with JSON and YAML input files.
+
+    Args:
+        file1 (str): Path to the first test file (JSON or YAML).
+        file2 (str): Path to the second test file (JSON or YAML).
+        load_data_fixture (function): Fixture for loading file content.
+        expected_plain_output (str): The expected output in plain format.
+
+    Asserts:
+        The output of the `format_plain` function matches the expected plain output.
+    """
     data1 = load_data_fixture(file1)
     data2 = load_data_fixture(file2)
     diff = build_diff(data1, data2)
@@ -379,15 +520,26 @@ def test_format_plain(file1, file2, load_data_fixture, expected_plain_output):
     assert result == expected_plain_output
 
 
-# Тесты CLI
 @pytest.mark.parametrize("file1, file2, format_type", [
     ("tests/fixtures/file1.json", "tests/fixtures/file2.json", "stylish"),
     ("tests/fixtures/file1.yaml", "tests/fixtures/file2.yaml", "plain"),
 ])
 def test_cli(file1, file2, format_type):
+    """
+    Tests the command-line interface (CLI).
+
+    Args:
+        file1 (str): Path to the first file to compare.
+        file2 (str): Path to the second file to compare.
+        format_type (str): The format type for the output ("stylish", "plain").
+
+    Asserts:
+        - The CLI exits with a return code of 0 (successful execution).
+        - The standard output (stdout) is not empty.
+    """
     result = subprocess.run(
         ['python', '-m', 'gendiff.scripts.gendiff', file1, file2, '--format', format_type],
-        capture_output=True, text=True
+        capture_output=True, text=True, check=True
     )
     assert result.returncode == 0
     assert result.stdout.strip() != ""
@@ -399,9 +551,20 @@ def test_cli(file1, file2, format_type):
     (["file1.json", "file2.json", "--format", "invalid"], 2),
 ])
 def test_cli_errors(args, expected_code):
+    """
+    Tests error handling in the command-line interface (CLI).
+
+    Args:
+        args (list): Command-line arguments to pass to the CLI.
+        expected_code (int): The expected return code for the given arguments.
+
+    Asserts:
+        - The CLI exits with the expected error code.
+    """
     result = subprocess.run(
         ['python', '-m', 'gendiff.scripts.gendiff'] + args,
         capture_output=True,
-        text=True
+        text=True,
+        check=False
     )
     assert result.returncode == expected_code
