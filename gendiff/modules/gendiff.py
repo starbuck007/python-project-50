@@ -1,6 +1,7 @@
 from gendiff.modules.parser import load_data
 from gendiff.modules.formatters.plain import format_plain
 from gendiff.modules.formatters.stylish import stylish
+from gendiff.modules.formatters.json_formatter import format_json
 
 
 def generate_diff(file1, file2, format_type="stylish"):
@@ -11,7 +12,7 @@ def generate_diff(file1, file2, format_type="stylish"):
     Args:
         file1 (str): Path to the first file.
         file2 (str): Path to the second file.
-        format_type (str): Output format (stylish, plain).
+        format_type (str): Output format (stylish, plain, json).
 
     Returns:
         str: A string with the differences results.
@@ -24,6 +25,8 @@ def generate_diff(file1, file2, format_type="stylish"):
         return format_plain(diff)
     elif format_type == 'stylish':
         return stylish(diff)
+    elif format_type == "json":
+        return format_json(diff)
     else:
         raise ValueError(f"Unsupported format: {format_type}")
 

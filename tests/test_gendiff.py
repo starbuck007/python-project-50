@@ -10,6 +10,7 @@ import yaml
 import pytest
 from gendiff.modules.gendiff import generate_diff, build_diff, stylish
 from gendiff.modules.formatters.plain import stringify, format_plain
+from gendiff.modules.formatters.json_formatter import format_json
 from gendiff.modules.parser_args import parse_args
 
 
@@ -252,6 +253,128 @@ def expected_plain_output():
         "Property 'group2' was removed\n"
         "Property 'group3' was added with value: [complex value]"
     )
+
+
+@pytest.fixture
+def expected_json_output():
+    """
+    Fixture that provides the expected JSON output for the test files.
+
+    Returns:
+        dict: The expected JSON-formatted diff tree.
+    """
+    return {
+        "common": {
+            "type": "nested",
+            "children": [
+                {
+                    "key": "follow",
+                    "type": "added",
+                    "value": False
+                },
+                {
+                    "key": "setting1",
+                    "type": "unchanged",
+                    "value": "Value 1"
+                },
+                {
+                    "key": "setting2",
+                    "type": "removed",
+                    "value": 200
+                },
+                {
+                    "key": "setting3",
+                    "type": "updated",
+                    "old_value": True,
+                    "new_value": None
+                },
+                {
+                    "key": "setting4",
+                    "type": "added",
+                    "value": "blah blah"
+                },
+                {
+                    "key": "setting5",
+                    "type": "added",
+                    "value": {
+                        "key5": "value5"
+                    }
+                },
+                {
+                    "key": "setting6",
+                    "type": "nested",
+                    "children": [
+                        {
+                            "key": "doge",
+                            "type": "nested",
+                            "children": [
+                                {
+                                    "key": "wow",
+                                    "type": "updated",
+                                    "old_value": "",
+                                    "new_value": "so much"
+                                }
+                            ]
+                        },
+                        {
+                            "key": "key",
+                            "type": "unchanged",
+                            "value": "value"
+                        },
+                        {
+                            "key": "ops",
+                            "type": "added",
+                            "value": "vops"
+                        }
+                    ]
+                }
+            ]
+        },
+        "group1": {
+            "type": "nested",
+            "children": [
+                {
+                    "key": "baz",
+                    "type": "updated",
+                    "old_value": "bas",
+                    "new_value": "bars"
+                },
+                {
+                    "key": "foo",
+                    "type": "unchanged",
+                    "value": "bar"
+                },
+                {
+                    "key": "nest",
+                    "type": "updated",
+                    "old_value": {
+                        "key": "value"
+                    },
+                    "new_value": "str"
+                }
+            ]
+        },
+        "group2": {
+            "type": "removed",
+            "value": {
+                "abc": 12345,
+                "deep": {
+                    "id": 45
+                }
+            }
+        },
+        "group3": {
+            "type": "added",
+            "value": {
+                "deep": {
+                    "id": {
+                        "number": 45
+                    }
+                },
+                "fee": 100500
+            }
+        }
+    }
 
 
 @pytest.mark.parametrize("file_path, expected_data", [
@@ -518,6 +641,30 @@ def test_format_plain(file1, file2, load_data_fixture, expected_plain_output):
     diff = build_diff(data1, data2)
     result = format_plain(diff)
     assert result == expected_plain_output
+
+
+@pytest.mark.parametrize("file1, file2", [
+    ("tests/fixtures/file1.json", "tests/fixtures/file2.json"),
+])
+def test_format_json(file1, file2, load_data_fixture, expected_json_output):
+    """
+    Tests the JSON formatter function.
+
+    Args:
+        file1 (str): Path to the first test file.
+        file2 (str): Path to the second test file.
+        load_data_fixture (function): Fixture for loading file content.
+        expected_json_output (str): The expected JSON output for the comparison.
+
+    Asserts:
+        - The JSON output matches the expected formatted result.
+    """
+    data1 = load_data_fixture(file1)
+    data2 = load_data_fixture(file2)
+    diff = build_diff(data1, data2)
+    result = format_json(diff)
+    expected_json = json.dumps(expected_json_output, indent=4)
+    assert result == expected_json
 
 
 @pytest.mark.parametrize("file1, file2, format_type", [
