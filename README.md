@@ -10,22 +10,48 @@ a command-line utility for comparing two configuration files and displaying thei
 ### Description
 With gendiff, you can compare configuration files and get a visual representation of the differences. This is useful for tracking changes in files.
 
-### Supported Formats
-JSON (.json), YAML (.yaml, .yml)
-
 ## Installation
-Use poetry to install dependencies:
-```poetry install```
+Follow these steps to install and set up the application using the Makefile:
+
+1. Install the necessary dependencies:
+    ```bash
+    make install
+    ```
+
+2. Build the application:
+    ```bash
+    make build
+    ```
+
+3. Install the package:
+    ```bash
+    make package-install
+    ```
 
 ## Usage
-Example usage for JSON:
-```gendiff file1.json file2.json```
 
-[![asciicast](https://asciinema.org/a/Fi5hg69spbEdWIMZOHdwYJWFy.svg)](https://asciinema.org/a/Fi5hg69spbEdWIMZOHdwYJWFy)
+1. help
+```bash
+gendiff -h
+```
 
-[![asciicast](https://asciinema.org/a/dZ3W1W0u80hGz3mDzjHKPw4Oz.svg)](https://asciinema.org/a/dZ3W1W0u80hGz3mDzjHKPw4Oz)
+2. command
+```bash
+gendiff <filepath1> <filepath2> -f <format>
+```
+Parameters:
+`-f`, `--format` (optional): Specifies the output format. 
+Possible values:
+- `stylish` (default): Outputs a human-readable diff.
+- `plain`: Outputs a plain text diff.
+- `json`: Outputs a JSON-formatted diff.
 
-Example usage for YAML:
-```gendiff file1.yaml file2.yaml```
+[![asciicast](https://asciinema.org/a/700394.svg)](https://asciinema.org/a/700394)
+
+[![asciicast](https://asciinema.org/a/700396.svg)](https://asciinema.org/a/700396)
+
+[![asciicast](https://asciinema.org/a/700398.svg)](https://asciinema.org/a/700398)
+
+[![asciicast](https://asciinema.org/a/700400.svg)](https://asciinema.org/a/700400)
 
 
