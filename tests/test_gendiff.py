@@ -16,25 +16,8 @@ from gendiff.modules.parser_args import parse_args
 
 @pytest.fixture
 def load_data_fixture():
-    """
-    Fixture for loading test data from JSON or YAML files.
-
-    Returns:
-        function: A function that takes a file path and returns its parsed content.
-    """
+    """Loads test data from JSON or YAML files."""
     def _load(file_path):
-        """
-        Loads data from the given file path.
-
-        Args:
-            file_path (str): Path to the file to load.
-
-        Returns:
-            dict: Parsed content of the file.
-
-        Raises:
-            ValueError: If the file format is unsupported.
-        """
         if file_path.endswith('.json'):
             with open(file_path, encoding='utf-8') as f:
                 return json.load(f)
@@ -47,372 +30,47 @@ def load_data_fixture():
 
 @pytest.fixture
 def expected_diff():
-    """
-    Fixture providing a pre-defined difference tree (diff) for testing.
-
-    Returns:
-        list: A diff tree with the differences between two files.
-    """
-    return [
-        {
-            'key': 'common',
-            'type': 'nested',
-            'children': [
-                {
-                    'key': 'follow',
-                    'type': 'added',
-                    'value': False
-                },
-                {
-                    'key': 'setting1',
-                    'type': 'unchanged',
-                    'value': 'Value 1'
-                },
-                {
-                    'key': 'setting2',
-                    'type': 'removed',
-                    'value': 200
-                },
-                {
-                    'key': 'setting3',
-                    'type': 'updated',
-                    'old_value': True,
-                    'new_value': None
-                },
-                {
-                    'key': 'setting4',
-                    'type': 'added',
-                    'value': 'blah blah'
-                },
-                {
-                    'key': 'setting5',
-                    'type': 'added',
-                    'value':
-                        {
-                            'key5': 'value5'
-                        }
-                },
-                {
-                    'key': 'setting6',
-                    'type': 'nested',
-                    'children': [
-                    {
-                        'key': 'doge',
-                        'type': 'nested',
-                        'children': [
-                        {
-                            'key': 'wow',
-                            'type': 'updated',
-                            'old_value': '',
-                            'new_value': 'so much'
-                        },
-                    ]
-                    },
-                    {
-                        'key': 'key',
-                        'type': 'unchanged',
-                        'value': 'value'
-                    },
-                    {
-                        'key': 'ops',
-                        'type': 'added',
-                        'value': 'vops'
-                    },
-                ]
-                },
-            ],
-        },
-        {
-            'key': 'group1',
-            'type': 'nested',
-            'children': [
-                {
-                    'key': 'baz',
-                    'type': 'updated',
-                    'old_value': 'bas',
-                    'new_value': 'bars'
-                },
-                {
-                    'key': 'foo',
-                    'type': 'unchanged',
-                    'value': 'bar'
-                },
-                {
-                    'key': 'nest',
-                    'type': 'updated',
-                    'old_value':
-                        {
-                            'key': 'value'
-                        },
-                    'new_value': 'str'
-                },
-            ],
-        },
-        {
-            'key': 'group2',
-            'type': 'removed',
-            'value':
-                {
-                    'abc': 12345,
-                    'deep':
-                        {
-                            'id': 45
-                        }
-                }
-        },
-        {
-            'key': 'group3',
-            'type': 'added',
-            'value':
-                {
-                    'deep':
-                        {
-                            'id':
-                                {
-                                    'number': 45
-                                }
-                        },
-                    'fee': 100500
-                }
-        },
-    ]
+    """Loads the expected diff tree from a file."""
+    file_path = 'tests/fixtures/expected_diff.json'
+    with open(file_path, 'r', encoding='utf-8') as file:
+        return json.load(file)
 
 
 @pytest.fixture
 def expected_stylish_output():
-    """
-    Fixture providing the expected output of the 'stylish' formatter.
-
-    Returns:
-        str: The expected stylish format output as a string.
-    """
-    return """{
-    common: {
-      + follow: false
-        setting1: Value 1
-      - setting2: 200
-      - setting3: true
-      + setting3: null
-      + setting4: blah blah
-      + setting5: {
-            key5: value5
-        }
-        setting6: {
-            doge: {
-              - wow: 
-              + wow: so much
-            }
-            key: value
-          + ops: vops
-        }
-    }
-    group1: {
-      - baz: bas
-      + baz: bars
-        foo: bar
-      - nest: {
-            key: value
-        }
-      + nest: str
-    }
-  - group2: {
-        abc: 12345
-        deep: {
-            id: 45
-        }
-    }
-  + group3: {
-        deep: {
-            id: {
-                number: 45
-            }
-        }
-        fee: 100500
-    }
-}"""
+    """Loads the expected stylish format output from a file."""
+    file_path = 'tests/fixtures/expected_stylish_output.txt'
+    with open(file_path, 'r', encoding='utf-8') as file:
+        return file.read()
 
 
 @pytest.fixture
 def expected_plain_output():
-    """
-    Fixture providing the expected output of the 'plain' formatter.
-
-    Returns:
-        str: The expected plain format output as a string.
-    """
-    return (
-        "Property 'common.follow' was added with value: false\n"
-        "Property 'common.setting2' was removed\n"
-        "Property 'common.setting3' was updated. From true to null\n"
-        "Property 'common.setting4' was added with value: 'blah blah'\n"
-        "Property 'common.setting5' was added with value: [complex value]\n"
-        "Property 'common.setting6.doge.wow' was updated. From '' to 'so much'\n"
-        "Property 'common.setting6.ops' was added with value: 'vops'\n"
-        "Property 'group1.baz' was updated. From 'bas' to 'bars'\n"
-        "Property 'group1.nest' was updated. From [complex value] to 'str'\n"
-        "Property 'group2' was removed\n"
-        "Property 'group3' was added with value: [complex value]"
-    )
+    """Loads the expected plain format output from a file."""
+    file_path = 'tests/fixtures/expected_plain_output.txt'
+    with open(file_path, 'r', encoding='utf-8') as file:
+        return file.read()
 
 
 @pytest.fixture
 def expected_json_output():
-    """
-    Fixture that provides the expected JSON output for the test files.
-
-    Returns:
-        dict: The expected JSON-formatted diff tree.
-    """
-    return {
-        "common": {
-            "type": "nested",
-            "children": [
-                {
-                    "key": "follow",
-                    "type": "added",
-                    "value": False
-                },
-                {
-                    "key": "setting1",
-                    "type": "unchanged",
-                    "value": "Value 1"
-                },
-                {
-                    "key": "setting2",
-                    "type": "removed",
-                    "value": 200
-                },
-                {
-                    "key": "setting3",
-                    "type": "updated",
-                    "old_value": True,
-                    "new_value": None
-                },
-                {
-                    "key": "setting4",
-                    "type": "added",
-                    "value": "blah blah"
-                },
-                {
-                    "key": "setting5",
-                    "type": "added",
-                    "value": {
-                        "key5": "value5"
-                    }
-                },
-                {
-                    "key": "setting6",
-                    "type": "nested",
-                    "children": [
-                        {
-                            "key": "doge",
-                            "type": "nested",
-                            "children": [
-                                {
-                                    "key": "wow",
-                                    "type": "updated",
-                                    "old_value": "",
-                                    "new_value": "so much"
-                                }
-                            ]
-                        },
-                        {
-                            "key": "key",
-                            "type": "unchanged",
-                            "value": "value"
-                        },
-                        {
-                            "key": "ops",
-                            "type": "added",
-                            "value": "vops"
-                        }
-                    ]
-                }
-            ]
-        },
-        "group1": {
-            "type": "nested",
-            "children": [
-                {
-                    "key": "baz",
-                    "type": "updated",
-                    "old_value": "bas",
-                    "new_value": "bars"
-                },
-                {
-                    "key": "foo",
-                    "type": "unchanged",
-                    "value": "bar"
-                },
-                {
-                    "key": "nest",
-                    "type": "updated",
-                    "old_value": {
-                        "key": "value"
-                    },
-                    "new_value": "str"
-                }
-            ]
-        },
-        "group2": {
-            "type": "removed",
-            "value": {
-                "abc": 12345,
-                "deep": {
-                    "id": 45
-                }
-            }
-        },
-        "group3": {
-            "type": "added",
-            "value": {
-                "deep": {
-                    "id": {
-                        "number": 45
-                    }
-                },
-                "fee": 100500
-            }
-        }
-    }
+    """Loads the expected JSON output from a file."""
+    file_path = 'tests/fixtures/expected_json_output.json'
+    with open(file_path, 'r', encoding='utf-8') as file:
+        return json.load(file)
 
 
-@pytest.mark.parametrize("file_path, expected_data", [
-    ("tests/fixtures/file1.json", {
-        "common": {
-            "setting1": "Value 1",
-            "setting2": 200,
-            "setting3": True,
-            "setting6": {"key": "value", "doge": {"wow": ""}}
-        },
-        "group1": {"baz": "bas", "foo": "bar", "nest": {"key": "value"}},
-        "group2": {"abc": 12345, "deep": {"id": 45}}
-    }),
-    ("tests/fixtures/file2.yaml", {
-        "common": {
-            "follow": False,
-            "setting1": "Value 1",
-            "setting3": None,
-            "setting4": "blah blah",
-            "setting5": {"key5": "value5"},
-            "setting6": {"key": "value", "ops": "vops", "doge": {"wow": "so much"}}
-        },
-        "group1": {"foo": "bar", "baz": "bars", "nest": "str"},
-        "group3": {"deep": {"id": {"number": 45}}, "fee": 100500}
-    })
+@pytest.mark.parametrize("file_path, expected_file", [
+    ("tests/fixtures/file1.json", "tests/fixtures/expected_file1.json"),
+    ("tests/fixtures/file2.yaml", "tests/fixtures/expected_file2.yaml")
 ])
-def test_load_data(file_path, expected_data, load_data_fixture):
-    """
-    Tests the data loading function with various file formats.
-
-    Args:
-        file_path (str): Path to the test file to load.
-        expected_data (dict): Expected parsed data from the file.
-        load_data_fixture (function): Fixture for loading the file content.
-
-    Asserts:
-        The loaded data matches the expected parsed data.
-    """
+def test_load_data(file_path, expected_file, load_data_fixture):
+    """Tests the data loading function with various file formats."""
+    with open(expected_file, 'r', encoding='utf-8') as file:
+        expected_data = (
+            json.load(file) if expected_file.endswith('.json')
+            else yaml.safe_load(file)
+        )
     assert load_data_fixture(file_path) == expected_data
 
 
@@ -438,23 +96,12 @@ def test_load_data(file_path, expected_data, load_data_fixture):
     ]
 )
 def test_parse_args_valid(args, expected):
-    """
-    Tests the parse_args function with valid arguments.
-
-    Args:
-        args (list): Command-line arguments to parse.
-        expected (dict): Expected parsed arguments with keys:
-            - 'first_file': The first file path.
-            - 'second_file': The second file path.
-            - 'format': The output format (default is 'stylish').
-
-    Asserts:
-        The parsed arguments match the expected dictionary values.
-    """
+    """Tests parse_args with valid arguments"""
     parsed_args = parse_args(args)
     assert parsed_args.first_file == expected["first_file"]
     assert parsed_args.second_file == expected["second_file"]
     assert parsed_args.format == expected["format"]
+
 
 @pytest.mark.parametrize("args", [
     (["file1.json"]),
@@ -462,17 +109,7 @@ def test_parse_args_valid(args, expected):
     (["file1.json", "file2.json", "--format", "invalid_format"])
 ])
 def test_parse_args_invalid(args):
-    """
-    Tests the parse_args function with invalid arguments:
-    - Required arguments are missing.
-    - An invalid format is provided.
-
-    Args:
-        args (list): Command-line arguments to parse.
-
-    Asserts:
-        The function raises a `SystemExit` exception for invalid input.
-    """
+    """Tests parse_args with invalid arguments"""
     with pytest.raises(SystemExit):
         parse_args(args)
 
@@ -482,18 +119,7 @@ def test_parse_args_invalid(args):
     ("tests/fixtures/file1.yaml", "tests/fixtures/file2.yaml")
 ])
 def test_build_diff(file1, file2, load_data_fixture, expected_diff):
-    """
-    Tests the build_diff function to ensure it generates the correct diff tree.
-
-    Args:
-        file1 (str): Path to the first test file.
-        file2 (str): Path to the second test file.
-        load_data_fixture (function): Fixture for loading file content.
-        expected_diff (list): The expected diff tree describing the differences.
-
-    Asserts:
-        The generated diff tree matches the expected diff tree.
-    """
+    """Tests build_diff with correct diff tree."""
     data1 = load_data_fixture(file1)
     data2 = load_data_fixture(file2)
     actual_diff = build_diff(data1, data2)
@@ -501,12 +127,7 @@ def test_build_diff(file1, file2, load_data_fixture, expected_diff):
 
 
 def test_build_diff_empty_dicts():
-    """
-    Tests the build_diff function with two empty dictionaries.
-
-    Asserts:
-        The generated diff tree is an empty list.
-    """
+    """Tests build_diff with empty dictionaries."""
     result = build_diff({}, {})
     assert not result
 
@@ -529,18 +150,7 @@ def test_build_diff_empty_dicts():
     ]
 )
 def test_generate_diff(file1, file2, format_type, expected_fixture, request):
-    """
-    Tests the generate_diff function for different formats.
-
-    Args:
-        file1 (str): Path to the first file.
-        file2 (str): Path to the second file.
-        format_type (str): Format type ("stylish", "plain").
-        expected_fixture (str): Name of the fixture holding the expected output.
-
-    Asserts:
-        The generated output matches the expected output for the given format.
-    """
+    """Tests generate_diff function with different formats."""
     expected_output = request.getfixturevalue(expected_fixture)
     result = generate_diff(file1, file2, format_type)
     assert result.strip() == expected_output.strip()
