@@ -1,7 +1,7 @@
-from gendiff.modules.parser import load_data
-from gendiff.modules.formatters.plain import format_plain
-from gendiff.modules.formatters.stylish import stylish
-from gendiff.modules.formatters.json_formatter import format_json
+"""Main module for generating differences between two files."""
+
+from gendiff.parser import load_data, parse_data
+from gendiff.formatters.formatter_selector import format_diff
 
 
 def generate_diff(file1, file2, format_type="stylish"):
@@ -17,21 +17,14 @@ def generate_diff(file1, file2, format_type="stylish"):
     Returns:
         str: A string with the differences results.
     """
-    data1 = load_data(file1)
-    data2 = load_data(file2)
+    data1 = parse_data(load_data(file1), file1)
+    data2 = parse_data(load_data(file2), file2)
     diff = build_diff(data1, data2)
-
-    if format_type == "plain":
-        return format_plain(diff)
-    elif format_type == 'stylish':
-        return stylish(diff)
-    elif format_type == "json":
-        return format_json(diff)
-    else:
-        raise ValueError(f"Unsupported format: {format_type}")
+    return format_diff(diff, format_type)
 
 
 def build_diff(data1, data2):
+    """Builds a structured diff between two data sets."""
     diff = []
     all_keys = sorted(data1.keys() | data2.keys())
 

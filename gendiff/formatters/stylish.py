@@ -16,10 +16,10 @@ def format_value(value, depth):
         str: The string representation of the value.
     """
     if isinstance(value, bool):
-        return "true" if value else "false"
-    elif value is None:
+        return str(value).lower()
+    if value is None:
         return "null"
-    elif isinstance(value, dict):
+    if isinstance(value, dict):
         indent = "    " * (depth + 1)
         closing_indent = "    " * depth
         lines = [
@@ -27,8 +27,7 @@ def format_value(value, depth):
             for key, val in value.items()
         ]
         return "{\n" + "\n".join(lines) + f"\n{closing_indent}}}"
-    else:
-        return str(value)
+    return str(value)
 
 
 def format_added(indent, key, value, depth):
@@ -112,9 +111,11 @@ def format_nested(indent, key, children, depth):
         Returns:
             list: The list of formatted strings with the nested property.
         """
-    result = [f"{indent}    {key}: {{"]
-    result.append(stylish(children, depth + 1))
-    result.append(f"{indent}    }}")
+    result = [
+        f"{indent}    {key}: {{",
+        stylish(children, depth + 1),
+        f"{indent}    }}"
+    ]
     return result
 
 
@@ -133,41 +134,41 @@ def stylish(diff, depth=0):
     result = []
 
     node_handlers = {
-        'added': lambda node: [
+        'added': lambda item: [
             format_added(
                 indent,
-                node['key'],
-                node['value'],
+                item['key'],
+                item['value'],
                 depth
             )
         ],
-        'removed': lambda node: [
+        'removed': lambda item: [
             format_removed(
                 indent,
-                node['key'],
-                node['value'],
+                item['key'],
+                item['value'],
                 depth
             )
         ],
-        'unchanged': lambda node: [
+        'unchanged': lambda item: [
             format_unchanged(
                 indent,
-                node['key'],
-                node['value'],
+                item['key'],
+                item['value'],
                 depth
             )
         ],
-        'updated': lambda node: format_updated(
+        'updated': lambda item: format_updated(
             indent,
-            node['key'],
-            node['old_value'],
-            node['new_value'],
+            item['key'],
+            item['old_value'],
+            item['new_value'],
             depth
         ),
-        'nested': lambda node: format_nested(
+        'nested': lambda item: format_nested(
             indent,
-            node['key'],
-            node['children'],
+            item['key'],
+            item['children'],
             depth
         ),
     }
