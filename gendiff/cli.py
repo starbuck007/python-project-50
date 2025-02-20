@@ -1,7 +1,13 @@
+"""
+Module for parsing command-line arguments for the difference generator.
+"""
+
+
 import argparse
 
 
 def parse_args(args=None):
+    """ Parses command-line arguments for the difference generator."""
     parser = argparse.ArgumentParser(
         description='Compares two configuration files and shows a difference.'
     )

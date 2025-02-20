@@ -1,6 +1,7 @@
 """Main module for generating differences between two files."""
 
-from gendiff.parser import load_data, parse_data
+from gendiff.parser import get_parsed_content
+from gendiff.diff_builder import build_diff
 from gendiff.formatters.formatter_selector import format_diff
 
 
@@ -17,47 +18,8 @@ def generate_diff(file1, file2, format_type="stylish"):
     Returns:
         str: A string with the differences results.
     """
-    data1 = parse_data(load_data(file1), file1)
-    data2 = parse_data(load_data(file2), file2)
+    data1 = get_parsed_content(file1)
+    data2 = get_parsed_content(file2)
+
     diff = build_diff(data1, data2)
     return format_diff(diff, format_type)
-
-
-def build_diff(data1, data2):
-    """Builds a structured diff between two data sets."""
-    diff = []
-    all_keys = sorted(data1.keys() | data2.keys())
-
-    for key in all_keys:
-        if key not in data1:
-            diff.append({
-                "key": key,
-                "type": "added",
-                "value": data2[key]
-            })
-        elif key not in data2:
-            diff.append({
-                "key": key,
-                "type": "removed",
-                "value": data1[key]
-            })
-        elif isinstance(data1[key], dict) and isinstance(data2[key], dict):
-            diff.append({
-                "key": key,
-                "type": "nested",
-                "children": build_diff(data1[key], data2[key])
-            })
-        elif data1[key] != data2[key]:
-            diff.append({
-                "key": key,
-                "type": "updated",
-                "old_value": data1[key],
-                "new_value": data2[key]
-            })
-        else:
-            diff.append({
-                "key": key,
-                "type": "unchanged",
-                "value": data1[key]
-            })
-    return diff

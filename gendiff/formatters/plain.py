@@ -67,10 +67,8 @@ def stringify(value):
         return '[complex value]'
     if isinstance(value, str):
         return f"'{value}'"
-    if value is True:
-        return 'true'
-    if value is False:
-        return 'false'
+    if isinstance(value, bool):
+        return str(value).lower()
     if value is None:
         return 'null'
     return value

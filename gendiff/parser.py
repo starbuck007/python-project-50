@@ -1,18 +1,30 @@
+"""
+Module for reading and parsing files based on file format.
+"""
+
+
+import os
 import json
 import yaml
 
 
-def load_data(file_path):
-    """Reads raw content from a file."""
-    with open(file_path, 'r', encoding='utf-8') as file:
-        return file.read()
+def get_file_extension(file_path):
+    """Extracts the file extension from file path."""
+    return os.path.splitext(file_path)[1][1:]
 
 
-def parse_data(content, file_path):
+def parse_data(content, file_extension):
     """Parses raw content based on the file format."""
-    if file_path.endswith('.json'):
+    if file_extension == 'json':
         return json.loads(content)
-    elif file_path.endswith(('.yaml', '.yml')):
+    if file_extension in ('yaml', 'yml'):
         return yaml.safe_load(content)
-    else:
-        raise ValueError(f"Unsupported file format: {file_path}")
+    raise ValueError(f"Unsupported file format: {file_extension}")
+
+
+def get_parsed_content(file_path):
+    """Reads file and parses content"""
+    file_extension = get_file_extension(file_path)
+    with open(file_path, 'r', encoding='utf-8') as file:
+        content = file.read()
+    return parse_data(content, file_extension)
