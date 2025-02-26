@@ -5,53 +5,41 @@ Tests for generate_diff in different formats.
 """
 
 
-import json
+import os
 import pytest
 from gendiff.gendiff import generate_diff
 
 
-@pytest.fixture
-def load_expected_output():
-    """To load expected output from a file."""
-    def _load(file_name, as_json=False):
-        file_path = f'tests/fixtures/{file_name}'
-        with open(file_path, 'r', encoding='utf-8') as file:
-            return json.load(file) if as_json else file.read()
-    return _load
+def get_fixture_path(file_name):
+    """Returns the full path to a fixture file."""
+    return os.path.join('tests', 'fixtures', file_name)
+
+
+def get_content(file_name):
+    """Loads expected output from a file."""
+    file_path = f'tests/fixtures/{file_name}'
+    with open(file_path, 'r', encoding='utf-8') as file:
+        return file.read()
 
 
 @pytest.mark.parametrize(
-    'file1, file2, format_type, expected_type, expected_file, as_json',
+    'file1, file2, format_type, expected_file',
     [
-        ('file1.json', 'file2.json', 'stylish', str,
-         'expected_stylish_output.txt', False),
-        ('file1.json', 'file2.json', 'json', dict, 'expected_json_output.json',
-         True),
-        ('file1.yaml', 'file2.yaml', 'plain', str, 'expected_plain_output.txt',
-         False),
-        ('file1.yaml', 'file2.yaml', 'stylish', str,
-         'expected_stylish_output.txt', False),
-        ('file1.yaml', 'file2.yaml', 'json', dict, 'expected_json_output.json',
-         True),
+        ('file1.json', 'file2.json', 'stylish', 'expected_stylish_output.txt'),
+        ('file1.json', 'file2.json', 'json', 'expected_json_output.json'),
+        ('file1.yaml', 'file2.yaml', 'plain', 'expected_plain_output.txt'),
+        ('file1.yaml', 'file2.yaml', 'stylish', 'expected_stylish_output.txt'),
+        ('file1.yaml', 'file2.yaml', 'json', 'expected_json_output.json'),
     ]
 )
-def test_generate_diff(file1, file2, format_type, expected_type,
-                               expected_file, as_json, load_expected_output):
+def test_generate_diff(file1, file2, format_type, expected_file):
     """Tests generate_diff for different files and formats."""
-    file_path1 = f'tests/fixtures/{file1}'
-    file_path2 = f'tests/fixtures/{file2}'
+    file_path1 = get_fixture_path(file1)
+    file_path2 = get_fixture_path(file2)
 
-    result = generate_diff(file_path1, file_path2, format_type)
+    result = generate_diff(file_path1, file_path2, format_type).strip()
 
-    expected_output = load_expected_output(expected_file, as_json=as_json)
+    expected_output = get_content(expected_file).strip()
 
-    if format_type == 'json':
-        parsed = json.loads(result)
-        if isinstance(parsed, list):
-            parsed = {item['key']: {k: v for k, v in item.items() if k != 'key'}
-                      for item in parsed}
-        assert isinstance(parsed, expected_type)
-        assert parsed == expected_output
-    else:
-        assert isinstance(result, expected_type)
-        assert result.strip() == expected_output.strip()
+    assert isinstance(result, str)
+    assert result == expected_output

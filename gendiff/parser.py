@@ -8,11 +8,6 @@ import json
 import yaml
 
 
-def get_file_extension(file_path):
-    """Extracts the file extension from file path."""
-    return os.path.splitext(file_path)[1][1:]
-
-
 def parse_data(content, file_extension):
     """Parses raw content based on the file format."""
     if file_extension == 'json':
@@ -24,7 +19,7 @@ def parse_data(content, file_extension):
 
 def get_parsed_content(file_path):
     """Reads file and parses content"""
-    file_extension = get_file_extension(file_path)
+    file_extension = os.path.splitext(file_path)[1][1:]
     with open(file_path, 'r', encoding='utf-8') as file:
         content = file.read()
     return parse_data(content, file_extension)
