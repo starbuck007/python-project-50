@@ -37,9 +37,9 @@ def test_generate_diff(file1, file2, format_type, expected_file):
     file_path1 = get_fixture_path(file1)
     file_path2 = get_fixture_path(file2)
 
-    result = generate_diff(file_path1, file_path2, format_type).strip()
+    result = generate_diff(file_path1, file_path2, format_type)
 
-    expected_output = get_content(expected_file).strip()
+    expected_output = get_content(expected_file)
 
     assert isinstance(result, str)
     assert result == expected_output
